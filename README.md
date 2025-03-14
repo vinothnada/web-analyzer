@@ -3,7 +3,8 @@
 Run server
 ------------
 1 . In the root folder type below command
-2. "go run main.go"
+2.  go mod tidy
+3. "go run main.go"
 
 
 Run UI
