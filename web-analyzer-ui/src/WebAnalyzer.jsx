@@ -29,7 +29,7 @@ export default function WebAnalyzer() {
     setResults(null);
 
     try {
-      const response = await axios.post("http://localhost:8080/api/analyze", { url });
+      const response = await axios.post("http://localhost:8082/api/analyze", { url });
       setResults(response.data);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
