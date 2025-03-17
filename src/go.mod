@@ -13,6 +13,7 @@ require (
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/PuerkitoBio/goquery v1.10.2
+	github.com/jarcoal/httpmock v1.3.1
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/yaml.v3 v3.0.1 // indirect

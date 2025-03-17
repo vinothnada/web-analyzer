@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
@@ -133,15 +134,37 @@ func analyzePage(targetURL string) (*types.AnalyzeResultes, error) {
 	}
 
 	// Extract data from the page
+	result.HTMLVersion = getHtmlVersion(doc)
 	result.Title = extractTitle(doc)
 	result.Headings = countHeadings(doc)
-	internalLinks, externalLinks := countLinks(doc, targetURL)
+	internalLinks, externalLinks, accessibleExternalLinks, brokenExternalLinks := countLinks(doc, targetURL)
 	result.InternalLinks = internalLinks
 	result.ExternalLinks = externalLinks
 	result.HasLoginForm = hasLoginForm(doc)
+	result.AccessibleExternalLinks = accessibleExternalLinks
+	result.BrokenExternalLinks = brokenExternalLinks
 
 	logrus.Info("Page analysis completed successfully")
 	return result, nil
+}
+
+func getHtmlVersion(doc *goquery.Document) string {
+	rawHTML, err := doc.Html()
+	if err != nil {
+		logrus.Error("Error extracting HTML content:", err)
+		return ""
+	}
+
+	if strings.Contains(rawHTML, "<!DOCTYPE html>") {
+		return "HTML5"
+	}
+	if strings.Contains(rawHTML, "<!DOCTYPE HTML PUBLIC") {
+		return "HTML 4"
+	}
+	if strings.Contains(rawHTML, "<!DOCTYPE html PUBLIC") {
+		return "XHTML"
+	}
+	return "Unknown HTML version"
 }
 
 // fetchURL sends a GET request to fetch the URL's content
@@ -201,9 +224,10 @@ func countHeadings(doc *goquery.Document) map[string]int {
 }
 
 // countLinks counts the internal and external links on the page
-func countLinks(doc *goquery.Document, targetURL string) (int, int) {
+func countLinks(doc *goquery.Document, targetURL string) (int, int, int, int) {
 	logrus.Debug("Counting internal and external links")
 	internalLinks, externalLinks := 0, 0
+	accessibleExternalLinks, brokenExternalLinks := 0, 0
 	parsedURL, _ := url.Parse(targetURL)
 
 	// Iterate through each link on the page
@@ -215,19 +239,58 @@ func countLinks(doc *goquery.Document, targetURL string) (int, int) {
 
 		// Parse the href and categorize as internal or external link
 		hrefParsed, err := url.Parse(href)
-		if err != nil || hrefParsed.Host == "" || hrefParsed.Host == parsedURL.Host {
+		if err != nil {
+			return
+		}
+
+		if hrefParsed.Host == "" || hrefParsed.Host == parsedURL.Host {
 			internalLinks++
 		} else {
 			externalLinks++
+			// Check if external link is accessible or broken
+			status := checkLinkAccessibility(href)
+			if status == "accessible" {
+				accessibleExternalLinks++
+			} else {
+				brokenExternalLinks++
+			}
 		}
 	})
 
-	logrus.Debug("Links counted successfully: internal=", internalLinks, " external=", externalLinks)
-	return internalLinks, externalLinks
+	logrus.Debug("Links counted successfully: internal=", internalLinks, " external=", externalLinks, " accessibleExternal=", accessibleExternalLinks, " brokenExternal=", brokenExternalLinks)
+	return internalLinks, externalLinks, accessibleExternalLinks, brokenExternalLinks
+}
+
+func checkLinkAccessibility(link string) string {
+	resp, err := http.Head(link)
+	if err != nil {
+		logrus.Debug("Error checking link:", link, " Error:", err)
+		return "broken"
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return "accessible"
+	}
+	return "broken"
 }
 
 // hasLoginForm checks if the page contains a login form
 func hasLoginForm(doc *goquery.Document) bool {
 	logrus.Debug("Checking for login form")
-	return doc.Find("input[type='password']").Length() > 0
+
+	// Check for password field
+	if doc.Find("input[type='password']").Length() > 0 {
+		return true
+	}
+
+	// Check for common social media login buttons (Facebook, Google, etc.)
+	if doc.Find("button, a").FilterFunction(func(i int, s *goquery.Selection) bool {
+		text := s.Text()
+		return strings.Contains(strings.ToLower(text), "login with") || strings.Contains(strings.ToLower(text), "sign in with")
+	}).Length() > 0 {
+		return true
+	}
+	return false
+
 }

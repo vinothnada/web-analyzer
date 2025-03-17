@@ -62,11 +62,14 @@ export default function WebAnalyzer() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Typography variant="h6">Results:</Typography>
           <Typography>HTML Version: {results.htmlVersion}</Typography>
-          <Typography>Title: {results.pageTitle}</Typography>
+          <Typography>Title: {results.title}</Typography>
           <Typography>Headings Count: {JSON.stringify(results.headings)}</Typography>
+          <Typography>Login Form Present: {results.hasLoginForm ? "Yes" : "No"}</Typography>
+          <br/>
           <Typography>Internal Links: {results.internalLinks}</Typography>
           <Typography>External Links: {results.externalLinks}</Typography>
-          <Typography>Login Form Present: {results.hasLoginForm ? "Yes" : "No"}</Typography>
+          <Typography>Accesible External Links: {results.accessibleExternalLinks}</Typography>
+          <Typography>Broken External Links: {results.brokenExternalLinks}</Typography>
         </motion.div>
       )}
     </Container>
