@@ -100,6 +100,7 @@ func parsePayload(r *http.Request) (types.RequestPayload, error) {
 func isValidURL(targetURL string) bool {
 	logrus.Debug("Validating URL: ", targetURL)
 	valid := urlRegex.MatchString(targetURL)
+
 	if valid {
 		logrus.Debug("URL is valid")
 	} else {
@@ -262,44 +263,6 @@ func countHeadings(doc *goquery.Document) map[string]int {
 	}
 	logrus.Debug("Headings counted successfully")
 	return headings
-}
-
-// countLinks counts the internal and external links on the page
-func countLinks(doc *goquery.Document, targetURL string) (int, int, int, int) {
-	logrus.Debug("Counting internal and external links")
-	internalLinks, externalLinks := 0, 0
-	accessibleExternalLinks, brokenExternalLinks := 0, 0
-	parsedURL, _ := url.Parse(targetURL)
-
-	// Iterate through each link on the page
-	doc.Find("a").Each(func(i int, s *goquery.Selection) {
-		href, exists := s.Attr("href")
-		if !exists {
-			return
-		}
-
-		// Parse the href and categorize as internal or external link
-		hrefParsed, err := url.Parse(href)
-		if err != nil {
-			return
-		}
-
-		if hrefParsed.Host == "" || hrefParsed.Host == parsedURL.Host {
-			internalLinks++
-		} else {
-			externalLinks++
-			// Check if external link is accessible or broken
-			status := checkLinkAccessibility(href)
-			if status == "accessible" {
-				accessibleExternalLinks++
-			} else {
-				brokenExternalLinks++
-			}
-		}
-	})
-
-	logrus.Debug("Links counted successfully: internal=", internalLinks, " external=", externalLinks, " accessibleExternal=", accessibleExternalLinks, " brokenExternal=", brokenExternalLinks)
-	return internalLinks, externalLinks, accessibleExternalLinks, brokenExternalLinks
 }
 
 func checkLinkAccessibility(link string) string {
