@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
@@ -110,39 +111,79 @@ func isValidURL(targetURL string) bool {
 // analyzePage analyzes the content of the page at the given URL
 func analyzePage(targetURL string) (*types.AnalyzeResultes, error) {
 	logrus.Info("Fetching URL: ", targetURL)
-
-	// Fetch the page content
 	resp, err := fetchURL(targetURL)
 	if err != nil {
-		logrus.Error("Error fetching URL: ", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	// Parse the HTML of the page
 	doc, err := parseHTML(resp.Body)
 	if err != nil {
-		logrus.Error("Error parsing HTML: ", err)
 		return nil, err
 	}
 
 	logrus.Info("Extracting data from page")
+	result := &types.AnalyzeResultes{Headings: make(map[string]int)}
 
-	// Initialize the result structure
-	result := &types.AnalyzeResultes{
-		Headings: make(map[string]int),
-	}
+	var waitGroup sync.WaitGroup
+	internalLinks, externalLinks := 0, 0
+	accessibleExternalLinks, brokenExternalLinks := 0, 0
+	linksChan := make(chan string)
+	statusChan := make(chan string)
 
-	// Extract data from the page
 	result.HTMLVersion = getHtmlVersion(doc)
 	result.Title = extractTitle(doc)
 	result.Headings = countHeadings(doc)
-	internalLinks, externalLinks, accessibleExternalLinks, brokenExternalLinks := countLinks(doc, targetURL)
+
+	parsedURL, _ := url.Parse(targetURL)
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists {
+			return
+		}
+
+		hrefParsed, err := url.Parse(href)
+		if err != nil {
+			return
+		}
+
+		if hrefParsed.Host == "" || hrefParsed.Host == parsedURL.Host {
+			internalLinks++
+		} else {
+			externalLinks++
+			waitGroup.Add(1)
+			go func(link string) {
+				defer waitGroup.Done()
+				linksChan <- link
+			}(href)
+		}
+	})
+
+	go func() {
+		waitGroup.Wait()
+		close(linksChan)
+	}()
+
+	go func() {
+		for link := range linksChan {
+			statusChan <- checkLinkAccessibility(link)
+		}
+		close(statusChan)
+	}()
+
+	for status := range statusChan {
+		if status == "accessible" {
+			accessibleExternalLinks++
+		} else {
+			brokenExternalLinks++
+		}
+	}
+
 	result.InternalLinks = internalLinks
 	result.ExternalLinks = externalLinks
-	result.HasLoginForm = hasLoginForm(doc)
 	result.AccessibleExternalLinks = accessibleExternalLinks
 	result.BrokenExternalLinks = brokenExternalLinks
+	result.HasLoginForm = hasLoginForm(doc)
 
 	logrus.Info("Page analysis completed successfully")
 	return result, nil
