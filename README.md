@@ -30,15 +30,15 @@ The main features of the application are below
 
 
 Frontend tools and libraries used
-    1. Created with React, vite and Mui
+1. Created with React, vite and Mui
 
 Backend tools and libraries used
-    1. cleanenv - Minimalistic configuration reader
-    2. testify - to write unit tests
-    3. prometheus - to provides metrics primitives
-    4. pprof - for profiling
-    5. logrus - for structured logs
-    6. goquery - to query and manipulate HTML document
+1. cleanenv - Minimalistic configuration reader
+2. testify - to write unit tests
+3. prometheus - to provides metrics primitives
+4. pprof - for profiling
+5. logrus - for structured logs
+6. goquery - to query and manipulate HTML document
 
 
 Potential feature improvements (can be added in future)
