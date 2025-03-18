@@ -196,7 +196,7 @@ func getHtmlVersion(doc *goquery.Document) string {
 		logrus.Error("Error extracting HTML content:", err)
 		return ""
 	}
-
+	rawHTML = strings.TrimSpace(rawHTML)
 	if strings.Contains(rawHTML, "<!DOCTYPE html>") {
 		return "HTML5"
 	}

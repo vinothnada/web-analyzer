@@ -16,8 +16,33 @@ Run UI
 2. npm install
 3. npm run dev
 
+
+Implementaion of Current application
+-------------------------------------
+
+The main features of the application are below
+1. URL Validation: Ensures the provided URL is in a valid format.
+2. Page Analysis: Fetches the content of the page and analyzes:
+    1. HTML Version: Identifies if the page uses HTML5, HTML 4, or XHTML.
+    2. Title and Headings: Extracts the page title and counts occurrences of headings (h1-h6).
+    3. Links: Counts internal and external links, checks the accessibility of external links, and identifies broken ones.
+    4. Login Form Detection: Checks if the page contains a login form, either a password input field or social media login  buttons.
+
+
+Frontend tools and libraries used
+    1. Created with React, vite and Mui
+
+Backend tools and libraries used
+    1. cleanenv - Minimalistic configuration reader
+    2. testify - to write unit tests
+    3. prometheus - to provides metrics primitives
+    4. pprof - for profiling
+    5. logrus - for structured logs
+    6. goquery - to query and manipulate HTML document
+
+
 Potential feature improvements (can be added in future)
------------------------
+-------------------------------------------------------
 
 1. Caching : Consider caching the results of analysis for pages that are frequently checked. This can reduce server load and provide faster results for subsequent users.
 2. Rate Limiting: Implement rate limiting to prevent abuse, especially when handling external links.

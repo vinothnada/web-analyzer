@@ -138,7 +138,7 @@ func Test_isValidURL(t *testing.T) {
 		want      bool
 	}{
 		{name: "Valid URL", targetURL: "https://example.com", want: true},
-		{name: "Invalid URL", targetURL: "ht://example.com", want: false},
+		{name: "Invalid URL", targetURL: "http://example.com", want: false},
 	}
 
 	for _, tt := range tests {
@@ -158,7 +158,7 @@ func Test_analyzePage(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "Valid URL", url: "https://example.com", wantErr: false},
-		{name: "Invalid URL", url: "ht://example.com", wantErr: true},
+		{name: "Invalid URL", url: "http://example.com", wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -184,9 +184,9 @@ func Test_getHtmlVersion(t *testing.T) {
 		html string
 		want string
 	}{
-		{name: "HTML5", html: "<!DOCTYPE html>", want: "HTML5"},
-		{name: "HTML4", html: "<!DOCTYPE HTML PUBLIC", want: "HTML 4"},
-		{name: "XHTML", html: "<!DOCTYPE html PUBLIC", want: "XHTML"},
+		{name: "HTML5", html: "<!DOCTYPE html><html><head></head><body></body></html>", want: "HTML5"},
+		{name: "HTML4", html: "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\"><html><head></head><body></body></html>", want: "HTML 4"},
+		{name: "XHTML", html: "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"><html><head></head><body></body></html>", want: "XHTML"},
 	}
 
 	for _, tt := range tests {
@@ -207,7 +207,7 @@ func Test_fetchURL(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "Valid URL", url: "https://example.com", wantErr: false},
-		{name: "Invalid URL", url: "ht://example.com", wantErr: true},
+		{name: "Invalid URL", url: "http://example.com", wantErr: true},
 	}
 
 	for _, tt := range tests {
